@@ -6,7 +6,7 @@ Produces: topic categorization, sentiment analysis, and additional insights.
 
 Design choices:
 - Hybrid topic categorization: keyword matching on existing `topics` field first,
-  Claude API for ambiguous/multi-label cases.
+  language model API for ambiguous/multi-label cases.
 - Sentiment analysis uses the pre-scored `sentimentScore` (1–5 scale) and per-sentence
   `sentimentType` from each transcript.
 - Call type classification uses title prefix + email domain heuristics.
@@ -177,9 +177,9 @@ def assign_theme_rules(topics: list[str]) -> str:
     return best
 
 
-def batch_classify_with_llm(rows_to_classify: list[dict]) -> dict[str, str]:
+def batch_classify_with_model(rows_to_classify: list[dict]) -> dict[str, str]:
     """
-    Use Claude to classify ambiguous meetings (score == 0 or tie).
+    Use a language model to classify ambiguous meetings (score == 0 or tie).
     Returns {meeting_id: theme_name}.
     """
     if not rows_to_classify:
@@ -222,19 +222,19 @@ Meetings:
 
 
 def assign_themes(df: pd.DataFrame) -> pd.DataFrame:
-    """Hybrid: rule-based first, LLM fallback for ambiguous cases."""
+    """Hybrid: rule-based first, model fallback for ambiguous cases."""
     df = df.copy()
     df["theme_scores"] = df["topics"].apply(score_themes)
     df["primary_theme"] = df["topics"].apply(assign_theme_rules)
 
-    # Find ambiguous (score == 0) rows for LLM fallback
+    # Find ambiguous (score == 0) rows for model fallback
     ambiguous = df[df["primary_theme"] == "Uncategorized"]
-    print(f"  Rule-based: {len(df) - len(ambiguous)} classified, {len(ambiguous)} ambiguous → LLM fallback")
+    print(f"  Rule-based: {len(df) - len(ambiguous)} classified, {len(ambiguous)} ambiguous → model fallback")
 
     if len(ambiguous) > 0:
         rows_to_classify = ambiguous[["meeting_id", "title", "topics", "summary_text"]].to_dict("records")
-        llm_results = batch_classify_with_llm(rows_to_classify)
-        for mid, theme in llm_results.items():
+        model_results = batch_classify_with_model(rows_to_classify)
+        for mid, theme in model_results.items():
             df.loc[df["meeting_id"] == mid, "primary_theme"] = theme
 
     return df
@@ -349,7 +349,7 @@ def fig_theme_distribution(df: pd.DataFrame):
     bars = ax.barh(theme_counts.index, theme_counts.values,
                    color=THEME_COLORS[:len(theme_counts)], edgecolor="white")
     ax.set_xlabel("Number of Meetings")
-    ax.set_title("Topic/Theme Distribution\n(Hybrid: keyword rules + LLM)", fontsize=13, fontweight="bold")
+    ax.set_title("Topic/Theme Distribution\n(Hybrid: keyword rules + model fallback)", fontsize=13, fontweight="bold")
     for bar in bars:
         ax.text(bar.get_width() + 0.2, bar.get_y() + bar.get_height() / 2,
                 f"{int(bar.get_width())}", va="center", fontsize=10)
@@ -715,7 +715,7 @@ def main():
     df["call_type"] = df.apply(classify_call_type, axis=1)
     print(f"  {df['call_type'].value_counts().to_dict()}")
 
-    print("\nAssigning themes (hybrid: keyword rules + LLM fallback)…")
+    print("\nAssigning themes (hybrid: keyword rules + model fallback)…")
     df = assign_themes(df)
 
     print("\nExtracting churn risk signals…")

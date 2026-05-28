@@ -227,9 +227,9 @@ function addInsightCard(slide, x, y, icon, title, body, color = C.teal) {
 
   // Method cards
   const cards = [
-    { x: 0.4,  label: "1  EXISTING TOPIC TAGS", body: "Each transcript's AI-generated summary already contains 4–7 topic tags (e.g., \"soc 2 audit\", \"outage remediation\"). These are the raw signal.", color: C.teal },
-    { x: 3.55, label: "2  KEYWORD MAPPING", body: "We map those tags to 8 high-level themes using curated keyword lists. 100% of meetings classified — no LLM needed for the first pass.", color: C.navy },
-    { x: 6.7,  label: "3  LLM FALLBACK", body: "Claude API is invoked only for meetings where keyword score = 0 (none here). This makes the pipeline fast and every decision traceable.", color: C.coral },
+    { x: 0.4,  label: "1  EXISTING TOPIC TAGS", body: "Each transcript's pre-processed summary already contains 4–7 topic tags (e.g., \"soc 2 audit\", \"outage remediation\"). These are the raw signal.", color: C.teal },
+    { x: 3.55, label: "2  KEYWORD MAPPING", body: "We map those tags to 8 high-level themes using curated keyword lists. 100% of meetings classified in the first pass.", color: C.navy },
+    { x: 6.7,  label: "3  MODEL FALLBACK", body: "A language model API is invoked only for meetings where keyword score = 0 (none here). Keeps the pipeline fast with every decision traceable.", color: C.coral },
   ];
   cards.forEach(({ x, label, body, color }) => {
     s.addShape(pres.shapes.RECTANGLE, {
